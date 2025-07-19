@@ -584,8 +584,8 @@
                 const initiationDate = `${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}/${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}/${Math.floor(Math.random() * 50) + 1975}`;
                 
                 // Build photo HTML
-                const photoHtml = profileImage 
-                    ? `<img src="${profileImage}" alt="${displayName}" onerror="this.style.display='none'; this.parentElement.textContent='${initials}';">`
+                const photoHtml = (apiData && apiData.profile && apiData.profile.profileImage) 
+                    ? `<img src="${apiData.profile.profileImage}" alt="${displayName}" onerror="this.style.display='none'; this.parentElement.textContent='${initials}';">`
                     : initials;
                 
                 document.getElementById('cardContent').innerHTML = `
