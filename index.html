@@ -483,7 +483,12 @@
         // New function to call backend API
         async function fetchProfileData(username) {
             try {
-                const response = await fetch('http://localhost:3001/api/profile', {
+                // Use relative URL for production, absolute for development
+                const apiUrl = window.location.hostname === 'localhost' 
+                    ? 'http://localhost:3001/api/profile'
+                    : '/api/profile';
+                    
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
