@@ -208,7 +208,10 @@ module.exports = async function handler(req, res) {
     
     res.json({
       username: cleanUsername,
-      profile: profile || { displayName },
+      profile: profile || { 
+        displayName,
+        profileImage: `https://ui-avatars.com/api/?name=${cleanUsername}&size=120&background=00ff41&color=000&format=png`
+      },
       conspiracy,
       stats: additionalStats,
       source: profile ? 'scraped' : 'generated',
