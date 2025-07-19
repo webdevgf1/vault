@@ -314,13 +314,17 @@
             font-weight: bold;
         }
 
-        .barcode {
+        .logo-placeholder {
             text-align: right;
-            font-family: 'Courier Prime', monospace;
-            font-size: 24px;
-            letter-spacing: 1px;
-            color: #00ff41;
-            opacity: 0.6;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .logo-placeholder img {
+            border: 1px solid rgba(0, 255, 65, 0.3);
+            border-radius: 4px;
+            padding: 5px;
         }
 
         .actions {
@@ -584,8 +588,8 @@
                 const initiationDate = `${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}/${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}/${Math.floor(Math.random() * 50) + 1975}`;
                 
                 // Build photo HTML
-                const photoHtml = profileImage 
-                    ? `<img src="${profileImage}" alt="${displayName}" onerror="this.style.display='none'; this.parentElement.textContent='${initials}';">`
+                const photoHtml = (apiData && apiData.profile && apiData.profile.profileImage) 
+                    ? `<img src="${apiData.profile.profileImage}" alt="${displayName}" onerror="this.style.display='none'; this.parentElement.textContent='${initials}';">`
                     : initials;
                 
                 document.getElementById('cardContent').innerHTML = `
@@ -615,7 +619,7 @@
                             <div class="detail-value">${realStats.threatLevel || 'CLASSIFIED'}</div>
                         </div>
                         <div class="detail-group">
-                            <div class="detail-label">NETWORK SIZE:</div>
+                            <div class="detail-label">FOLLOWERS:</div>
                             <div class="detail-value">${realStats.followers || Math.floor(Math.random() * 10000)}</div>
                         </div>
                         <div class="detail-group">
@@ -627,7 +631,9 @@
                             <div class="detail-value">${realStats.missionCount || Math.floor(Math.random() * 50)}</div>
                         </div>
                         <div class="detail-group">
-                            <div class="barcode">${barcode}</div>
+                            <div class="logo-placeholder">
+                                <img src="https://via.placeholder.com/120x40/00ff41/000000?text=LOGO" alt="Company Logo" style="max-width: 100%; height: auto; filter: brightness(1.2);">
+                            </div>
                         </div>
                     </div>
                 `;
