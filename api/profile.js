@@ -74,7 +74,8 @@ async function getTwitterProfile(username) {
   }
   
   try {
-    const response = await axios.get(`https://api.twitter.com/2/users/by/username/${username}`, {
+    // Get user info
+    const userResponse = await axios.get(`https://api.twitter.com/2/users/by/username/${username}`, {
       headers: {
         'Authorization': `Bearer ${bearerToken}`
       },
@@ -83,9 +84,21 @@ async function getTwitterProfile(username) {
       }
     });
     
-    const user = response.data.data;
-    
+    const user = userResponse.data.data;
     if (!user) return null;
+    
+    // Get recent tweets
+    const tweetsResponse = await axios.get(`https://api.twitter.com/2/users/${user.id}/tweets`, {
+      headers: {
+        'Authorization': `Bearer ${bearerToken}`
+      },
+      params: {
+        'max_results': 10,
+        'tweet.fields': 'created_at,public_metrics'
+      }
+    });
+    
+    const tweets = tweetsResponse.data?.data || [];
     
     return {
       username: username,
@@ -94,7 +107,7 @@ async function getTwitterProfile(username) {
       profileImage: user.profile_image_url?.replace('_normal', '_400x400'), // Get higher res
       followers: user.public_metrics?.followers_count || 0,
       following: user.public_metrics?.following_count || 0,
-      tweets: [] // Would need separate API call for tweets
+      tweets: tweets.map(tweet => tweet.text)
     };
     
   } catch (error) {
@@ -103,7 +116,56 @@ async function getTwitterProfile(username) {
   }
 }
 
-// Enhanced conspiracy based on scraped data
+// Anthropic API function
+async function generateAIConspiracy(profile) {
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  
+  if (!anthropicKey) {
+    console.log('No Anthropic API key found, using fallback');
+    return generateDataDrivenConspiracy(profile);
+  }
+  
+  try {
+    const { displayName, bio, tweets, username } = profile;
+    const recentTweets = tweets.slice(0, 5).join('\n');
+    
+    const prompt = `Based on this Twitter profile, create a hilarious conspiracy theory for a secret agent ID card:
+
+Username: ${username}
+Display Name: ${displayName}
+Bio: ${bio}
+Recent Tweets: ${recentTweets}
+
+Create a wild, absurd conspiracy theory (2-3 sentences) that incorporates their actual interests/topics but makes them sound like a secret agent with ridiculous supernatural abilities. Make it specific to their content but completely unhinged. Format: "[Name] secretly [ridiculous activity] while [absurd mission] using [impossible technology/substance] to [outrageous goal]."
+
+Examples:
+- "Joe Rogan secretly operates interdimensional podcast studios where he interviews time-traveling comedians about DMT-powered reality simulations."
+- "Elon Musk is actually a consciousness-uploading alien who uses Tesla factories as cover for building rockets that run on crystallized memes."
+
+Keep it humorous, family-friendly, and completely absurd!`;
+
+    const response = await axios.post('https://api.anthropic.com/v1/messages', {
+      model: 'claude-3-sonnet-20240229',
+      max_tokens: 200,
+      messages: [{
+        role: 'user',
+        content: prompt
+      }]
+    }, {
+      headers: {
+        'Authorization': `Bearer ${anthropicKey}`,
+        'Content-Type': 'application/json',
+        'anthropic-version': '2023-06-01'
+      }
+    });
+    
+    return response.data.content[0].text.trim();
+    
+  } catch (error) {
+    console.error('Anthropic API error:', error.response?.data || error.message);
+    return generateDataDrivenConspiracy(profile);
+  }
+}
 function generateDataDrivenConspiracy(profile) {
   const { displayName, bio, tweets, username } = profile;
   
@@ -164,8 +226,8 @@ module.exports = async function handler(req, res) {
     let conspiracy, displayName, realStats;
     
     if (profile && (profile.displayName || profile.bio)) {
-      // Use real data
-      conspiracy = generateDataDrivenConspiracy(profile);
+      // Use real data with AI-generated conspiracy
+      conspiracy = await generateAIConspiracy(profile);
       displayName = profile.displayName || cleanUsername;
       realStats = {
         followers: profile.followers,
