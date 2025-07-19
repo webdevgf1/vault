@@ -64,60 +64,43 @@ function generateConspiracy(agent) {
   return conspiracy;
 }
 
-// Nitter scraping function
-async function scrapeViaNetworkOrbscan(username) {
-  const NITTER_INSTANCES = ['https://nitter.poast.org', 'https://nitter.1d4.us', 'https://nitter.unixfox.eu'];
-  const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
+// Twitter API function
+async function getTwitterProfile(username) {
+  const bearerToken = process.env.TWITTER_BEARER_TOKEN;
   
-  for (const instance of NITTER_INSTANCES) {
-    try {
-      console.log(`Trying ${instance}/${username}`);
-      const response = await axios.get(`${instance}/${username}`, {
-        timeout: 8000,
-        headers: {
-          'User-Agent': USER_AGENT,
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-        }
-      });
-      
-      const $ = cheerio.load(response.data);
-      
-      const profile = {
-        username: username,
-        displayName: $('.profile-card .profile-card-fullname').text().trim() || 
-                    $('.profile-card h1').text().trim(),
-        bio: $('.profile-bio').text().trim(),
-        profileImage: $('.profile-card-avatar img').attr('src'),
-        followers: $('.profile-stat-num').eq(1).text().trim(),
-        following: $('.profile-stat-num').eq(2).text().trim(),
-        tweets: []
-      };
-      
-      // Fix relative URLs
-      if (profile.profileImage && profile.profileImage.startsWith('/')) {
-        profile.profileImage = instance + profile.profileImage;
-      }
-      
-      // Get recent tweets
-      $('.timeline-item .tweet-content').each((i, elem) => {
-        if (i < 5) {
-          const tweetText = $(elem).text().trim();
-          if (tweetText && tweetText.length > 10) {
-            profile.tweets.push(tweetText);
-          }
-        }
-      });
-      
-      if (profile.displayName || profile.bio || profile.tweets.length > 0) {
-        console.log(`Successfully scraped via ${instance}`);
-        return profile;
-      }
-    } catch (err) {
-      console.log(`${instance} failed:`, err.message);
-      continue;
-    }
+  if (!bearerToken) {
+    console.log('No Twitter API token found');
+    return null;
   }
-  return null;
+  
+  try {
+    const response = await axios.get(`https://api.twitter.com/2/users/by/username/${username}`, {
+      headers: {
+        'Authorization': `Bearer ${bearerToken}`
+      },
+      params: {
+        'user.fields': 'description,public_metrics,profile_image_url,name'
+      }
+    });
+    
+    const user = response.data.data;
+    
+    if (!user) return null;
+    
+    return {
+      username: username,
+      displayName: user.name,
+      bio: user.description || '',
+      profileImage: user.profile_image_url?.replace('_normal', '_400x400'), // Get higher res
+      followers: user.public_metrics?.followers_count || 0,
+      following: user.public_metrics?.following_count || 0,
+      tweets: [] // Would need separate API call for tweets
+    };
+    
+  } catch (error) {
+    console.error('Twitter API error:', error.response?.data || error.message);
+    return null;
+  }
 }
 
 // Enhanced conspiracy based on scraped data
@@ -175,8 +158,8 @@ module.exports = async function handler(req, res) {
     const cleanUsername = username.replace('@', '').toLowerCase();
     console.log(`Processing request for username: ${cleanUsername}`);
     
-    // Try to scrape profile
-    const profile = await scrapeViaNetworkOrbscan(cleanUsername);
+    // Try Twitter API first, then fallback
+    const profile = await getTwitterProfile(cleanUsername);
     
     let conspiracy, displayName, realStats;
     
