@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vault4 Intelligence Agency</title>
+    <title>Vault Intelligence Agency</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap');
 
@@ -314,17 +314,13 @@
             font-weight: bold;
         }
 
-        .logo-placeholder {
+        .barcode {
             text-align: right;
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-        }
-
-        .logo-placeholder img {
-            border: 1px solid rgba(0, 255, 65, 0.3);
-            border-radius: 4px;
-            padding: 5px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 24px;
+            letter-spacing: 1px;
+            color: #00ff41;
+            opacity: 0.6;
         }
 
         .actions {
@@ -588,8 +584,8 @@
                 const initiationDate = `${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}/${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}/${Math.floor(Math.random() * 50) + 1975}`;
                 
                 // Build photo HTML
-                const photoHtml = (apiData && apiData.profile && apiData.profile.profileImage) 
-                    ? `<img src="${apiData.profile.profileImage}" alt="${displayName}" onerror="this.style.display='none'; this.parentElement.textContent='${initials}';">`
+                const photoHtml = profileImage 
+                    ? `<img src="${profileImage}" alt="${displayName}" onerror="this.style.display='none'; this.parentElement.textContent='${initials}';">`
                     : initials;
                 
                 document.getElementById('cardContent').innerHTML = `
@@ -619,7 +615,7 @@
                             <div class="detail-value">${realStats.threatLevel || 'CLASSIFIED'}</div>
                         </div>
                         <div class="detail-group">
-                            <div class="detail-label">FOLLOWERS:</div>
+                            <div class="detail-label">NETWORK SIZE:</div>
                             <div class="detail-value">${realStats.followers || Math.floor(Math.random() * 10000)}</div>
                         </div>
                         <div class="detail-group">
@@ -631,9 +627,7 @@
                             <div class="detail-value">${realStats.missionCount || Math.floor(Math.random() * 50)}</div>
                         </div>
                         <div class="detail-group">
-                            <div class="logo-placeholder">
-                                <img src="https://via.placeholder.com/120x40/00ff41/000000?text=LOGO" alt="Company Logo" style="max-width: 100%; height: auto; filter: brightness(1.2);">
-                            </div>
+                            <div class="barcode">${barcode}</div>
                         </div>
                     </div>
                 `;
@@ -694,112 +688,8 @@
         }
 
         function downloadProfile() {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    // Set canvas size to match your card
-    canvas.width = 700;
-    canvas.height = 400;
-    
-    // Fill background
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Draw border
-    ctx.strokeStyle = '#00ff41';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(0, 0, canvas.width, canvas.height);
-    
-    // Draw header
-    ctx.fillStyle = '#00ff41';
-    ctx.fillRect(0, 0, canvas.width, 50);
-    
-    // Header text
-    ctx.fillStyle = '#000000';
-    ctx.font = 'bold 16px Courier';
-    ctx.textAlign = 'center';
-    ctx.fillText('[ VAULT INTELLIGENCE AGENCY ]', canvas.width / 2, 30);
-    
-    // Get current data from your page
-    const agentName = document.querySelector('.agent-details .detail-value').textContent;
-    const conspiracy = document.querySelector('.conspiracy-text').textContent;
-    const initials = document.querySelector('.agent-photo').textContent || document.querySelector('.agent-photo img')?.alt?.substring(0,2) || 'XX';
-    
-    // Agent photo box
-    ctx.strokeStyle = '#00ff41';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(20, 70, 120, 120);
-    ctx.fillStyle = '#333333';
-    ctx.fillRect(22, 72, 116, 116);
-    
-    // Agent initials
-    ctx.fillStyle = '#00ff41';
-    ctx.font = 'bold 24px Courier';
-    ctx.textAlign = 'center';
-    ctx.fillText(initials, 80, 140);
-    
-    // Agent name
-    ctx.fillStyle = '#00ff41';
-    ctx.font = 'bold 18px Courier';
-    ctx.textAlign = 'left';
-    ctx.fillText(agentName, 160, 90);
-    
-    // Conspiracy text (wrapped)
-    ctx.font = '12px Courier';
-    wrapText(ctx, conspiracy, 160, 110, 500, 16);
-    
-    // Stats
-    const stats = document.querySelectorAll('.detail-value');
-    const labels = ['AGENT', 'STATUS', 'CLEARANCE', 'THREAT', 'FOLLOWERS', 'LAST SEEN', 'MISSIONS'];
-    
-    let yPos = 220;
-    for(let i = 1; i < Math.min(stats.length, 7); i++) {
-        const x = ((i-1) % 2) * 350 + 20;
-        const y = yPos + Math.floor((i-1) / 2) * 50;
-        
-        ctx.strokeStyle = 'rgba(0, 255, 65, 0.5)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x, y + 30);
-        ctx.stroke();
-        
-        ctx.fillStyle = 'rgba(0, 255, 65, 0.7)';
-        ctx.font = '10px Courier';
-        ctx.fillText(labels[i] || 'DATA', x + 10, y + 12);
-        
-        ctx.fillStyle = '#00ff41';
-        ctx.font = 'bold 12px Courier';
-        ctx.fillText(stats[i].textContent, x + 10, y + 25);
-    }
-    
-    // Download
-    const link = document.createElement('a');
-    link.download = `vault_agent_${agentName.replace('@', '')}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-}
-
-// Helper function for text wrapping
-function wrapText(context, text, x, y, maxWidth, lineHeight) {
-    const words = text.split(' ');
-    let line = '';
-    let currentY = y;
-    
-    for (let n = 0; n < words.length; n++) {
-        const testLine = line + words[n] + ' ';
-        const metrics = context.measureText(testLine);
-        
-        if (metrics.width > maxWidth && n > 0) {
-            context.fillText(line, x, currentY);
-            line = words[n] + ' ';
-            currentY += lineHeight;
-        } else {
-            line = testLine;
+            alert('INITIATING SECURE DOWNLOAD PROTOCOL...\n\nIn the full version:\n• Generate high-res agent card image\n• Apply terminal-style filters\n• Download as PNG/PDF\n• Include metadata and QR codes');
         }
-    }
-    context.fillText(line, x, currentY);
-}
 
         function shareToVault() {
             alert('UPLOADING TO VAULT NETWORK...\n\nIn the full version:\n• Post to community platform\n• Generate shareable link\n• Add to agent database\n• Enable community reactions');
